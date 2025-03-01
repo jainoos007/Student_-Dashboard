@@ -1,3 +1,4 @@
+import student from "../models/student.js";
 import Student from "../models/student.js";
 
 //get all students
@@ -43,6 +44,9 @@ export const signup = async (req, res) => {
         .status(500)
         .json({ message: "Server error while saving student." });
     }
+    return res
+      .status(201)
+      .json({ message: "User registered successfully.", student: newStudent });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error." });

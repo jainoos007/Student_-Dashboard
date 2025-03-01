@@ -13,8 +13,11 @@ app.use(express.json());
 app.use("/api/student/", sudentRouter);
 
 //mongodb connection
+//admin007-admin321
 mongoose
-  .connect("mongodb://localhost:27017/student")
+  .connect(
+    "mongodb+srv://admin007:admin321@cluster0.dph3d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  )
   .then((e) => console.log("MongoDB connected successfully"))
   .catch((err) => console.log("Error connecting to MongoDB" + err));
 
