@@ -1,4 +1,3 @@
-import student from "../models/student.js";
 import Student from "../models/student.js";
 
 //get all students
@@ -47,6 +46,31 @@ export const signup = async (req, res) => {
     return res
       .status(201)
       .json({ message: "User registered successfully.", student: newStudent });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
+  }
+};
+
+//login
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    //check for existing student
+    const existinStudent = await Student.findOne({ email });
+    if (existinStudent) {
+      if (existinStudent.password === password) {
+        return res
+          .status(200)
+          .json({
+            message: "User logged in successfully.",
+            student: existinStudent,
+          });
+      } else {
+        return res.status(401).json({ message: "Incorrect password." });
+      }
+    }
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error." });
