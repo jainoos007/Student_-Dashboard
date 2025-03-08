@@ -1,6 +1,9 @@
 import Student from "../models/student.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
-//get all students
+//get all student
 export const getAllStudents = async (req, res) => {
   try {
     const students = await Student.find();
