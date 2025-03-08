@@ -63,14 +63,17 @@ export const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide email and password",
+        message: "Please provide email or password",
       });
     }
 
     //check for existing student
     const existinStudent = await Student.findOne({ email });
     if (existinStudent) {
-      if (existinStudent.password === password) {
+      // Compare the provided password with the hashed password
+      const isPasswordValid = await existinStudent.comparePassword(password);
+
+      if (isPasswordValid) {
         return res.status(200).json({
           message: "User logged in successfully.",
           student: existinStudent,
