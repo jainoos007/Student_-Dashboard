@@ -74,9 +74,11 @@ export const login = async (req, res) => {
       const isPasswordValid = await existinStudent.comparePassword(password);
 
       if (isPasswordValid) {
+        // Exclude sensitive fields from the response
+        const { password: _, ...studentData } = existinStudent.toObject();
         return res.status(200).json({
-          message: "User logged in successfully.",
-          student: existinStudent,
+          message: "Login successful.",
+          student: studentData,
         });
       } else {
         return res.status(401).json({ message: "Incorrect password." });
