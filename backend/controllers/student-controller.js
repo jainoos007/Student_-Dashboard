@@ -22,7 +22,7 @@ export const signup = async (req, res) => {
     //check for existing students
     const existingStudent = await Student.findOne({ email });
     if (existingStudent) {
-      return res.status(400).json({ message: "User already exist" });
+      return res.status(400).json({ message: "Email already registered" });
     }
 
     //create new student
