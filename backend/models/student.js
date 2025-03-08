@@ -50,7 +50,7 @@ const studentSchema = new mongoose.Schema(
         { name: "Science" },
         { name: "English" },
         { name: "History" },
-        { name: "Religious" },
+        { name: "Relegious" },
         { name: "Language" },
         { name: "Information Technology" },
         { name: "Civics" },
@@ -60,5 +60,35 @@ const studentSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to hash the password before saving
+studentSchema.pre("save", async function (next) {
+  // Only hash the password if it has been modified (or is new)
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  try {
+    // Generate a salt
+    const salt = await bcrypt.genSalt(10);
+    // Hash the password with the salt
+    const hashedPassword = await bcrypt.hash(this.password, salt);
+    // Replace the plain text password with the hashed one
+    this.password = hashedPassword;
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Method to compare passwords
+studentSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    // Compare the candidate password with the hashed password
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (err) {
+    throw err;
+  }
+};
 
 export default mongoose.model("Student", studentSchema);
