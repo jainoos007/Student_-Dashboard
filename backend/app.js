@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/student-route.js";
+import teacherRoutes from "./routes/teacher-route.js";
 import cors from "cors";
 
 // Load environment variables
@@ -18,6 +19,7 @@ app.use(express.urlencoded({ extended: true }));
 //routes
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
+app.use("/api/teachers", teacherRoutes);
 
 // Default route
 app.get("/", (req, res) => {
