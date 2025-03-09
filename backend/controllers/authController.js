@@ -5,7 +5,7 @@ import sendEmail from "../utils/emailService.js";
 // Generate token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
+    expiresIn: "30d",
   });
 };
 
@@ -18,6 +18,11 @@ export const registerStudent = async (req, res) => {
     const existingStudent = await Student.findOne({ email });
     if (existingStudent) {
       return res.status(400).json({ message: "Email already registered" });
+    }
+
+    // Validate age
+    if (age < 18) {
+      return res.status(400).json({ message: "Age must be at least 18" });
     }
 
     //create new student
@@ -40,11 +45,16 @@ export const registerStudent = async (req, res) => {
     }
 
     // Send confirmation email
-    await sendEmail({
-      email: newStudent.email,
-      subject: "Registration Successful",
-      message: `Hello ${newStudent.firstName},\n\nYour registration was successful. Welcome to our student portal!\n\nRegards,\nStudent Registration System`,
-    });
+    try {
+      await sendEmail({
+        email: newStudent.email,
+        subject: "Welcome to Student Registration System",
+        html: getWelcomeEmailTemplate(newStudent.firstName),
+      });
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Continue with registration even if email fails
+    }
 
     // Generate token
     const token = generateToken(newStudent._id, "student");
