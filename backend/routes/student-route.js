@@ -5,6 +5,7 @@ import {
   uploadProfilePicture,
   updateStudentMarks,
 } from "../controllers/student-controller.js";
+import protectStudent from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
