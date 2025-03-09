@@ -87,17 +87,17 @@ export const loginStudent = async (req, res) => {
     }
 
     //check for existing student
-    const existinStudent = await Student.findOne({ email });
-    if (existinStudent) {
+    const existingStudent = await Student.findOne({ email });
+    if (existingStudent) {
       // Compare the provided password with the hashed password
-      const isPasswordValid = await existinStudent.comparePassword(password);
+      const isPasswordValid = await existingStudent.comparePassword(password);
 
       if (isPasswordValid) {
         // Generate token
-        const token = generateToken(existinStudent._id, "student");
+        const token = generateToken(existingStudent._id, "student");
 
         // Exclude sensitive fields from the response
-        const { password: _, ...studentData } = existinStudent.toObject();
+        const { password: _, ...studentData } = existingStudent.toObject();
         return res.status(200).json({
           message: "Login successful.",
           token,
@@ -157,22 +157,39 @@ export const loginTeacher = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for teacher email
-    const teacher = await Teacher.findOne({ email });
-
-    if (teacher && (await teacher.matchPassword(password))) {
-      res.json({
-        _id: teacher._id,
-        firstName: teacher.firstName,
-        lastName: teacher.lastName,
-        email: teacher.email,
-        token: generateToken(teacher._id, "teacher"),
+    // Check for email and password
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide email and password",
       });
-    } else {
-      res.status(401).json({ message: "Invalid email or password" });
     }
-  } catch (error) {
-    console.error("Login Teacher Error:", error);
-    res.status(500).json({ message: error.message });
+
+    //check for existing student
+    const existingTeacher = await Teacher.findOne({ email });
+    if (existingTeacher) {
+      // Compare the provided password with the hashed password
+      const isPasswordValid = await existingTeacher.comparePassword(password);
+
+      if (isPasswordValid) {
+        // Generate token
+        const token = generateToken(existingTeacher._id, "teacher");
+
+        // Exclude sensitive fields from the response
+        const { password: _, ...teacherData } = existingTeacher.toObject();
+        return res.status(200).json({
+          message: "Login successful.",
+          token,
+          teacher: teacherData,
+        });
+      } else {
+        return res.status(401).json({ message: "Incorrect password." });
+      }
+    } else {
+      return res.status(404).json({ message: "User not found." });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error." });
   }
 };
