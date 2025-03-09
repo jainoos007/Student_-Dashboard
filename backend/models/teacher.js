@@ -37,17 +37,32 @@ const teacherSchema = mongoose.Schema(
 
 // Middleware to hash password before saving
 teacherSchema.pre("save", async function (next) {
+  // Only hash the password if it has been modified (or is new)
   if (!this.isModified("password")) {
-    next();
+    return next();
   }
 
-  const salt = bcrypt.genSalt(10);
-  this.password = bcrypt.hash(this.password, salt);
+  try {
+    // Generate a salt
+    const salt = await bcrypt.genSalt(10);
+    // Hash the password with the salt
+    const hashedPassword = await bcrypt.hash(this.password, salt);
+    // Replace the plain text password with the hashed one
+    this.password = hashedPassword;
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Method to compare entered password with hashed password
-teacherSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+teacherSchema.methods.comparePassword = async function (candidatePassword) {
+  try {
+    // Compare the candidate password with the hashed password
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (err) {
+    throw err;
+  }
 };
 
 export default mongoose.model("Teacher", teacherSchema);

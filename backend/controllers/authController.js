@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import Student from "../models/student.js";
 import Teacher from "../models/teacher.js";
-import sendEmail from "../utils/emailService.js";
+import { sendEmail, getWelcomeEmailTemplate } from "../utils/emailService.js";
 
 // Generate token
 const generateToken = (id, role) => {
@@ -46,16 +46,16 @@ export const registerStudent = async (req, res) => {
     }
 
     // Send confirmation email
-    try {
-      await sendEmail({
-        email: newStudent.email,
-        subject: "Welcome to Student Registration System",
-        html: getWelcomeEmailTemplate(newStudent.firstName),
-      });
-    } catch (emailError) {
-      console.error("Error sending welcome email:", emailError);
-      // Continue with registration even if email fails
-    }
+    // try {
+    //   await sendEmail({
+    //     email: newStudent.email,
+    //     subject: "Welcome to Student Registration System",
+    //     html: getWelcomeEmailTemplate(newStudent.firstName),
+    //   });
+    // } catch (emailError) {
+    //   console.error("Error sending welcome email:", emailError);
+    //   // Continue with registration even if email fails
+    // }
 
     // Generate token
     const token = generateToken(newStudent._id, "student");

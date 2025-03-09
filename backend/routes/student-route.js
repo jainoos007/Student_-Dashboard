@@ -1,6 +1,5 @@
 import express from "express";
 import {
-  getAllStudents,
   getStudentProfile,
   updateStudentProfile,
   uploadProfilePicture,
@@ -8,9 +7,6 @@ import {
 } from "../controllers/student-controller.js";
 
 const router = express.Router();
-
-//get all students
-router.get("/", getAllStudents);
 
 // Student profile routes
 router.route("/profile").get(getStudentProfile).put(updateStudentProfile);
