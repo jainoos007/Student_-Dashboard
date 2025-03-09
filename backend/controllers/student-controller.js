@@ -50,7 +50,7 @@ const upload = multer({
 });
 
 // Get student profile
-const getStudentProfile = async (req, res) => {
+export const getStudentProfile = async (req, res) => {
   try {
     const student = await Student.findById(req.user._id);
 
@@ -74,7 +74,7 @@ const getStudentProfile = async (req, res) => {
 };
 
 // Update student profile
-const updateStudentProfile = async (req, res) => {
+export const updateStudentProfile = async (req, res) => {
   try {
     const student = await Student.findById(req.user._id);
 
@@ -108,7 +108,7 @@ const updateStudentProfile = async (req, res) => {
 };
 
 // Upload profile picture
-const uploadProfilePicture = async (req, res) => {
+export const uploadProfilePicture = async (req, res) => {
   const uploadSingle = upload.single("profilePicture");
 
   uploadSingle(req, res, async function (err) {
@@ -155,7 +155,7 @@ const uploadProfilePicture = async (req, res) => {
 };
 
 // Update student marks
-const updateStudentMarks = async (req, res) => {
+export const updateStudentMarks = async (req, res) => {
   try {
     const student = await Student.findById(req.user._id);
 
@@ -207,11 +207,4 @@ const updateStudentMarks = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-export default {
-  getStudentProfile,
-  updateStudentProfile,
-  uploadProfilePicture,
-  updateStudentMarks,
 };
