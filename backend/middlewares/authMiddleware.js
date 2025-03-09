@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
-import Student from "../models/student";
-import Teacher from "../models/teacher";
+import Student from "../models/student.js";
+import Teacher from "../models/teacher.js";
 
 // Middleware to protect routes that require student authentication
 export const protectStudent = async (req, res, next) => {
