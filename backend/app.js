@@ -1,16 +1,30 @@
 import express from "express";
 import mongoose from "mongoose";
-import sudentRouter from "./routes/student-route.js";
+import dotenv from "dotenv";
+import authRoutes from "./routes/authRoutes.js";
+import studentRoutes from "./routes/student-route.js";
+import cors from "cors";
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 
 const PORT = 3000;
 
-//middleware to parse json request bodies
+//middleware
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-//student route
-app.use("/api/student/", sudentRouter);
+//routes
+app.use("/api/auth", authRoutes);
+app.use("/api/students", studentRoutes);
+
+// Default route
+app.get("/", (req, res) => {
+  res.send("API is running...");
+});
 
 //mongodb connection
 //admin007-admin321

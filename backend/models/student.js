@@ -6,7 +6,7 @@ const subjectSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  marks: {
+  mark: {
     type: Number,
     default: 0,
     min: 0,
@@ -18,45 +18,40 @@ const studentSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-      required: true,
+      required: [true, "First name is required"],
     },
     lastName: {
       type: String,
-      required: true,
+      required: [true, "Last name is required"],
     },
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
+      match: [
+        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+        "Please enter a valid email",
+      ],
     },
     password: {
       type: String,
-      required: true,
+      required: [true, "Password is required"],
       minlength: 6,
     },
     age: {
       type: Number,
-      required: true,
-      min: 18,
+      required: [true, "Age is required"],
+      min: [18, "Age must be at least 18"],
     },
     profilePicture: {
       type: String,
       default: "",
     },
-    subjects: {
-      type: [subjectSchema],
-      default: [
-        { name: "Mathematics" },
-        { name: "Science" },
-        { name: "English" },
-        { name: "History" },
-        { name: "Relegious" },
-        { name: "Language" },
-        { name: "Information Technology" },
-        { name: "Civics" },
-        { name: "Literature" },
-      ],
+    subjects: [subjectSchema],
+    createdAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   { timestamps: true }
@@ -80,6 +75,23 @@ studentSchema.pre("save", async function (next) {
   } catch (err) {
     next(err);
   }
+});
+
+studentSchema.pre("save", function (next) {
+  if (this.isNew && (!this.subjects || this.subjects.length === 0)) {
+    this.subjects = [
+      { name: "Mathematics", mark: 0 },
+      { name: "Science", mark: 0 },
+      { name: "English", mark: 0 },
+      { name: "History", mark: 0 },
+      { name: "Geography", mark: 0 },
+      { name: "Computer Science", mark: 0 },
+      { name: "Physics", mark: 0 },
+      { name: "Chemistry", mark: 0 },
+      { name: "Biology", mark: 0 },
+    ];
+  }
+  next();
 });
 
 // Method to compare passwords
