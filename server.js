@@ -1,28 +1,36 @@
-// Use dynamic import for app.js
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
+import cors from "cors";
 
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Enable CORS for API
+app.use(cors());
+app.use(express.json());
+
+// Import backend routes
+import authRoutes from "./backend/routes/authRoutes.js";
+import studentRoutes from "./backend/routes/student-route.js";
+import teacherRoutes from "./backend/routes/teacher-route.js";
+
+app.use("/api/auth", authRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/teachers", teacherRoutes);
+
+// --- Serve the Frontend ---
+// Get the correct directory path in ES Module
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-// Dynamically import the app from backend
-const startServer = async () => {
-  const { app } = await import("./backend/app.js");
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "frontend", "dist")));
 
-  // Serve static files from the React Vite build
-  app.use(express.static(join(__dirname, "frontend/dist")));
+// Serve React frontend for unknown routes
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"));
+});
 
-  // For any request not caught by backend routes, serve the React app
-  app.get("*", (req, res) => {
-    res.sendFile(join(__dirname, "frontend/dist", "index.html"));
-  });
-
-  // Get port from backend or use 5000
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-};
-
-startServer().catch(console.error);
+// Start server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
