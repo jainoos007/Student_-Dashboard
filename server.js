@@ -2,8 +2,8 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
+import { app } from "./backend/app.js";
 
-const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Enable CORS for API
