@@ -97,6 +97,7 @@ export const updateStudentMarks = async (marksData) => {
 };
 
 export const uploadProfilePicture = async (formData) => {
+  console.log("form data:", formData);
   try {
     const response = await api.post("/students/profile/upload", formData, {
       headers: {

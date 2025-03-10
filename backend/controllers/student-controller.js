@@ -1,43 +1,14 @@
 import Student from "../models/student.js";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
+import streamifier from "streamifier";
+import cloudinary from "cloudinary";
+import dotenv from "dotenv";
 
-const uploadDir = "uploads/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// Configure storage for multer
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      `student-${req.user._id}-${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
-
-// Check file type
-const fileFilter = (req, file, cb) => {
-  const filetypes = /jpeg|jpg|png/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error("Only images with jpg, jpeg, or png format are allowed"));
-  }
-};
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 1024 * 1024 * 5 }, // 5MB max file size
-  fileFilter,
+dotenv.config();
+// Configure Cloudinary
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // Get student profile
@@ -99,50 +70,105 @@ export const updateStudentProfile = async (req, res) => {
 };
 
 // Upload profile picture
+// export const uploadProfilePicture = async (req, res) => {
+//   const uploadSingle = upload.single("profilePicture");
+
+//   uploadSingle(req, res, async function (err) {
+//     if (err) {
+//       return res.status(400).json({ message: err.message });
+//     }
+
+//     if (!req.file) {
+//       return res.status(400).json({ message: "Please upload an image file" });
+//     }
+
+//     try {
+//       const student = await Student.findById(req.user._id);
+
+//       if (student) {
+//         // Delete old profile picture if exists
+//         if (student.profilePicture) {
+//           const oldImagePath = path.join(
+//             __dirname,
+//             "..",
+//             student.profilePicture
+//           );
+//           if (fs.existsSync(oldImagePath)) {
+//             fs.unlinkSync(oldImagePath);
+//           }
+//         }
+
+//         // Update profile picture path
+//         student.profilePicture = `/uploads/${req.file.filename}`;
+//         await student.save();
+
+//         res.json({
+//           message: "Profile picture uploaded successfully",
+//           profilePicture: student.profilePicture,
+//         });
+//       } else {
+//         res.status(404);
+//         throw new Error("Student not found");
+//       }
+//     } catch (error) {
+//       res.status(500).json({ message: error.message });
+//     }
+//   });
+// };
+
+// Upload Profile Picture using Cloudinary
 export const uploadProfilePicture = async (req, res) => {
-  const uploadSingle = upload.single("profilePicture");
-
-  uploadSingle(req, res, async function (err) {
-    if (err) {
-      return res.status(400).json({ message: err.message });
-    }
-
-    if (!req.file) {
+  try {
+    if (!req.files || !req.files.profilePicture) {
       return res.status(400).json({ message: "Please upload an image file" });
     }
 
-    try {
-      const student = await Student.findById(req.user._id);
+    const student = await Student.findById(req.user._id);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
 
-      if (student) {
-        // Delete old profile picture if exists
-        if (student.profilePicture) {
-          const oldImagePath = path.join(
-            __dirname,
-            "..",
-            student.profilePicture
-          );
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath);
-          }
+    const file = req.files.profilePicture;
+    console.log("Received file:", file.name); // Debugging
+
+    // Delete old profile picture if it exists
+    if (student.cloudinaryPublicId) {
+      await cloudinary.v2.uploader.destroy(student.cloudinaryPublicId);
+    }
+
+    // Upload new image to Cloudinary
+    const uploadStream = cloudinary.v2.uploader.upload_stream(
+      {
+        folder: "student_profiles",
+        transformation: [{ width: 300, height: 300, crop: "fill" }],
+        resource_type: "image",
+      },
+      async (error, result) => {
+        if (error) {
+          return res
+            .status(500)
+            .json({ message: "Cloudinary upload failed", error });
         }
 
-        // Update profile picture path
-        student.profilePicture = `/uploads/${req.file.filename}`;
+        // Save new image URL & public ID
+        student.profilePicture = result.secure_url;
+        student.cloudinaryPublicId = result.public_id;
         await student.save();
 
         res.json({
           message: "Profile picture uploaded successfully",
           profilePicture: student.profilePicture,
         });
-      } else {
-        res.status(404);
-        throw new Error("Student not found");
       }
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  });
+    );
+
+    streamifier.createReadStream(file.data).pipe(uploadStream);
+  } catch (error) {
+    console.error("Upload Error:", error);
+    res
+      .status(500)
+      .json({ message: "Internal Server Error", error: error.message });
+  }
 };
 
 // Update student marks

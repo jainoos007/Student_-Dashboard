@@ -6,6 +6,7 @@ import studentRoutes from "./routes/student-route.js";
 import teacherRoutes from "./routes/teacher-route.js";
 import cors from "cors";
 import path from "path";
+import fileUpload from "express-fileupload";
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +17,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Enable file upload middleware
+app.use(fileUpload());
 
 //routes
 app.use("/api/auth", authRoutes);
@@ -28,7 +32,6 @@ app.get("/", (req, res) => {
 });
 
 //mongodb connection
-//admin007-admin321
 mongoose
   .connect(process.env.MONGODB_URI)
   .then((e) => console.log("MongoDB connected successfully"))

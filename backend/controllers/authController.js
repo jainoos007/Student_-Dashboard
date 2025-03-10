@@ -45,17 +45,17 @@ export const registerStudent = async (req, res) => {
         .json({ message: "Server error while saving student." });
     }
 
-    // Send confirmation email
-    // try {
-    //   await sendEmail({
-    //     email: newStudent.email,
-    //     subject: "Welcome to Student Registration System",
-    //     html: getWelcomeEmailTemplate(newStudent.firstName),
-    //   });
-    // } catch (emailError) {
-    //   console.error("Error sending welcome email:", emailError);
-    //   // Continue with registration even if email fails
-    // }
+    //Send confirmation email
+    try {
+      await sendEmail({
+        email: newStudent.email,
+        subject: "Welcome to Student Registration System",
+        html: getWelcomeEmailTemplate(newStudent.firstName),
+      });
+    } catch (emailError) {
+      console.error("Error sending welcome email:", emailError);
+      // Continue with registration even if email fails
+    }
 
     // Generate token
     const token = generateToken(newStudent._id, "student");

@@ -109,9 +109,7 @@ const StudentDashboard = () => {
           <div className="card p-4">
             <ProfilePictureUpload
               currentImage={
-                profileData?.profilePicture
-                  ? `http://localhost:3000${profileData.profilePicture}`
-                  : null
+                profileData?.profilePicture ? profileData.profilePicture : null
               }
               onUpdateSuccess={handleProfilePictureUpdate}
             />

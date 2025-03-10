@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FaCamera, FaSpinner } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { uploadProfilePicture } from "../../services/api";
+import { uploadProfilePicture } from "../../services/api"; // API call function
 import { useAuth } from "../../contexts/AuthContext";
 
 const ProfilePictureUpload = ({ currentImage, onUpdateSuccess }) => {
@@ -44,18 +44,26 @@ const ProfilePictureUpload = ({ currentImage, onUpdateSuccess }) => {
       const formData = new FormData();
       formData.append("profilePicture", file);
 
+      // Debugging: Log FormData contents
+      for (let [key, value] of formData.entries()) {
+        console.log("FormData Key:", key, "Value:", value);
+      }
+
       const response = await uploadProfilePicture(formData);
 
-      // Update user context with new image URL
+      if (!response.profilePicture) {
+        throw new Error("Upload failed, no profile picture URL received");
+      }
+
       updateUser({ profilePicture: response.profilePicture });
 
-      // Callback to parent component
       if (onUpdateSuccess) {
         onUpdateSuccess(response.profilePicture);
       }
 
       toast.success("Profile picture updated successfully");
     } catch (error) {
+      console.error("Upload failed:", error);
       toast.error(error.message || "Failed to upload profile picture");
       setPreviewImage(null);
     } finally {

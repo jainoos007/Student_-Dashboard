@@ -37,7 +37,7 @@ export const getWelcomeEmailTemplate = (firstName) => {
       <p style="color: #4a5568; font-size: 16px;">Thank you for registering with our Student Registration System. Your account has been successfully created.</p>
       <p style="color: #4a5568; font-size: 16px;">You can now log in to your account to update your profile information and enter your subject marks.</p>
       <div style="text-align: center; margin-top: 30px;">
-        <a href="#" style="background-color: #4299e1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Your Account</a>
+        <a href="http://localhost:5173/login" style="background-color: #4299e1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Login to Your Account</a>
       </div>
       <p style="color: #4a5568; font-size: 14px; margin-top: 30px; text-align: center;">If you have any questions, please contact our support team.</p>
       <p style="color: #718096; font-size: 12px; text-align: center; margin-top: 20px;">© 2025 ABC Software (Pvt) LTD</p>

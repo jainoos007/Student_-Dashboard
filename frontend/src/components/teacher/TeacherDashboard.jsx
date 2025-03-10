@@ -113,12 +113,6 @@ const TeacherDashboard = () => {
             />
             <FaSearch className="absolute left-3 top-3 text-gray-400" />
           </div>
-          <button
-            className="btn-primary ml-4 flex items-center"
-            onClick={() => setShowAddForm(true)}
-          >
-            <FaPlus className="mr-2" /> Add Student
-          </button>
         </div>
       </div>
 
