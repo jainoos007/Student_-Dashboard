@@ -26,11 +26,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/teachers", teacherRoutes);
 
-// Default route
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
 //mongodb connection
 mongoose
   .connect(process.env.MONGODB_URI)
