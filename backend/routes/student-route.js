@@ -1,21 +1,24 @@
 import express from "express";
 import {
-  getProfile,
-  updateProfile,
-  updateSubjectMarks,
-  upload,
+  getStudentProfile,
+  updateStudentMarks,
+  updateStudentProfile,
+  uploadProfilePicture,
 } from "../controllers/student-controller.js";
-import { protectStudent } from "../middlewares/authMiddleware.js";
+import { protect, studentOnly } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// Protect all routes
-router.use(protectStudent);
+// Apply auth middleware to all routes
+router.use(protect);
+router.use(studentOnly);
 
 // Student profile routes
-router.get("/profile", getProfile);
-router.put("/profile", updateProfile);
-router.put("/profile/picture", upload.single("profilePicture"), updateProfile);
-router.put("/marks", updateSubjectMarks);
+router.route("/profile").get(getStudentProfile).put(updateStudentProfile);
+
+router.post("/profile/upload", uploadProfilePicture);
+
+// Student marks route
+router.put("/marks", updateStudentMarks);
 
 export default router;

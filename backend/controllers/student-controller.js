@@ -3,142 +3,194 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Set up multer for file uploads
+// Configure storage for multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = "./uploads/";
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
-    cb(null, `student-${req.student.id}${path.extname(file.originalname)}`);
+    cb(
+      null,
+      `student-${req.user._id}-${Date.now()}${path.extname(file.originalname)}`
+    );
   },
 });
 
-// Filter for image types
+// Check file type
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image")) {
-    cb(null, true);
+  const filetypes = /jpeg|jpg|png/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed!"), false);
+    cb(new Error("Only images with jpg, jpeg, or png format are allowed"));
   }
 };
 
-export const upload = multer({
+const upload = multer({
   storage,
+  limits: { fileSize: 1024 * 1024 * 5 }, // 5MB max file size
   fileFilter,
-  limits: { fileSize: 1024 * 1024 * 5 }, // 5MB limit
 });
 
 // Get student profile
-export const getProfile = async (req, res) => {
+export const getStudentProfile = async (req, res) => {
   try {
-    const student = await Student.findById(req.student.id);
+    const student = await Student.findById(req.user._id);
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
+    if (student) {
+      res.json({
+        _id: student._id,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        email: student.email,
+        age: student.age,
+        profilePicture: student.profilePicture,
+        subjects: student.subjects,
       });
+    } else {
+      res.status(404);
+      throw new Error("Student not found");
     }
-
-    res.status(200).json({
-      success: true,
-      data: student,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err.message,
-    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
 // Update student profile
-export const updateProfile = async (req, res) => {
+export const updateStudentProfile = async (req, res) => {
   try {
-    // Exclude fields that should not be updated via this route
-    const { password, email, ...updateData } = req.body;
+    const student = await Student.findById(req.user._id);
 
-    // If there's a file upload, add profilePicture to updateData
-    if (req.file) {
-      updateData.profilePicture = `/uploads/${req.file.filename}`;
-    }
+    if (student) {
+      student.firstName = req.body.firstName || student.firstName;
+      student.lastName = req.body.lastName || student.lastName;
+      student.email = req.body.email || student.email;
+      student.age = req.body.age || student.age;
 
-    const student = await Student.findByIdAndUpdate(
-      req.student.id,
-      updateData,
-      {
-        new: true,
-        runValidators: true,
+      if (req.body.password) {
+        student.password = req.body.password;
       }
-    );
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
+      const updatedStudent = await student.save();
+
+      res.json({
+        _id: updatedStudent._id,
+        firstName: updatedStudent.firstName,
+        lastName: updatedStudent.lastName,
+        email: updatedStudent.email,
+        age: updatedStudent.age,
+        profilePicture: updatedStudent.profilePicture,
       });
+    } else {
+      res.status(404);
+      throw new Error("Student not found");
     }
-
-    res.status(200).json({
-      success: true,
-      data: student,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err.message,
-    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Update subject marks
-export const updateSubjectMarks = async (req, res) => {
+// Upload profile picture
+export const uploadProfilePicture = async (req, res) => {
+  const uploadSingle = upload.single("profilePicture");
+
+  uploadSingle(req, res, async function (err) {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Please upload an image file" });
+    }
+
+    try {
+      const student = await Student.findById(req.user._id);
+
+      if (student) {
+        // Delete old profile picture if exists
+        if (student.profilePicture) {
+          const oldImagePath = path.join(
+            __dirname,
+            "..",
+            student.profilePicture
+          );
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath);
+          }
+        }
+
+        // Update profile picture path
+        student.profilePicture = `/uploads/${req.file.filename}`;
+        await student.save();
+
+        res.json({
+          message: "Profile picture uploaded successfully",
+          profilePicture: student.profilePicture,
+        });
+      } else {
+        res.status(404);
+        throw new Error("Student not found");
+      }
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+};
+
+// Update student marks
+export const updateStudentMarks = async (req, res) => {
   try {
+    const student = await Student.findById(req.user._id);
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
     const { subjects } = req.body;
 
     if (!subjects || !Array.isArray(subjects)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide subject data",
-      });
+      return res.status(400).json({ message: "Invalid subjects data" });
     }
 
-    const student = await Student.findById(req.student.id);
+    // Validate subject data
+    for (let i = 0; i < subjects.length; i++) {
+      const subjectData = subjects[i];
 
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: "Student not found",
-      });
-    }
-
-    // Update marks for each subject
-    subjects.forEach((subjectUpdate) => {
-      const subjectToUpdate = student.subjects.find(
-        (s) => s.name === subjectUpdate.name
-      );
-      if (subjectToUpdate) {
-        subjectToUpdate.marks = subjectUpdate.marks;
+      if (!subjectData._id) {
+        return res.status(400).json({ message: "Subject ID is required" });
       }
-    });
+
+      const mark = Number(subjectData.mark);
+      if (isNaN(mark) || mark < 0 || mark > 100) {
+        return res
+          .status(400)
+          .json({ message: "Mark must be a number between 0 and 100" });
+      }
+
+      // Find and update the subject
+      const subjectIndex = student.subjects.findIndex(
+        (s) => s._id.toString() === subjectData._id
+      );
+
+      if (subjectIndex === -1) {
+        return res
+          .status(404)
+          .json({ message: `Subject with ID ${subjectData._id} not found` });
+      }
+
+      student.subjects[subjectIndex].mark = mark;
+    }
 
     await student.save();
 
-    res.status(200).json({
-      success: true,
-      data: student,
+    res.json({
+      message: "Marks updated successfully",
+      subjects: student.subjects,
     });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: err.message,
-    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

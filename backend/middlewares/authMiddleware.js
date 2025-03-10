@@ -2,86 +2,58 @@ import jwt from "jsonwebtoken";
 import Student from "../models/student.js";
 import Teacher from "../models/teacher.js";
 
-// Middleware to protect routes that require student authentication
-export const protectStudent = async (req, res, next) => {
-  try {
-    let token;
+// Middleware to verify JWT token
+export const protect = async (req, res, next) => {
+  let token;
 
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      // Get token from header
       token = req.headers.authorization.split(" ")[1];
+
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+      // Check if this is a student or teacher
+      if (decoded.role === "student") {
+        req.user = await Student.findById(decoded.id).select("-password");
+        req.role = "student";
+      } else if (decoded.role === "teacher") {
+        req.user = await Teacher.findById(decoded.id).select("-password");
+        req.role = "teacher";
+      }
+
+      next();
+    } catch (error) {
+      console.error(error);
+      res.status(401);
+      throw new Error("Not authorized, token failed");
     }
+  }
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Check if user exists
-    const student = await Student.findById(decoded.id);
-
-    if (!student) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    req.student = student;
-    next();
-  } catch (err) {
-    return res.status(401).json({
-      success: false,
-      message: "Not authorized to access this route",
-    });
+  if (!token) {
+    res.status(401);
+    throw new Error("Not authorized, no token");
   }
 };
 
-// Middleware to protect routes that require teacher authentication
-export const protectTeacher = async (req, res, next) => {
-  try {
-    let token;
-
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
-      token = req.headers.authorization.split(" ")[1];
-    }
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route",
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Check if user exists
-    const teacher = await Teacher.findById(decoded.id);
-
-    if (!teacher) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    req.teacher = teacher;
-    next();
-  } catch (err) {
-    return res.status(401).json({
-      success: false,
-      message: "Not authorized to access this route",
-    });
+// Middleware to verify teacher role
+export const teacherOnly = (req, res, next) => {
+  if (req.role !== "teacher") {
+    res.status(403);
+    throw new Error("Not authorized, teachers only");
   }
+  next();
+};
+
+// Middleware to verify student role
+export const studentOnly = (req, res, next) => {
+  if (req.role !== "student") {
+    res.status(403);
+    throw new Error("Not authorized, students only");
+  }
+  next();
 };

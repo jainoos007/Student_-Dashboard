@@ -29,9 +29,7 @@ app.get("/", (req, res) => {
 //mongodb connection
 //admin007-admin321
 mongoose
-  .connect(
-    "mongodb+srv://admin007:admin321@cluster0.dph3d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-  )
+  .connect(process.env.MONGODB_URI)
   .then((e) => console.log("MongoDB connected successfully"))
   .catch((err) => console.log("Error connecting to MongoDB" + err));
 
