@@ -105,7 +105,10 @@ export const uploadProfilePicture = async (formData) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || { message: "An error occurred" };
+    console.error("Upload error:", error); // Log for debugging
+    throw (
+      error.response?.data || { message: error.message || "An error occurred" }
+    );
   }
 };
 

@@ -62,8 +62,8 @@ const Layout = ({ children }) => {
       <footer className="bg-white py-4 border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Dottech Software (Pvt) LTD. All
-            rights reserved.
+            &copy; {new Date().getFullYear()} ABC Software (Pvt) LTD. All rights
+            reserved.
           </p>
         </div>
       </footer>

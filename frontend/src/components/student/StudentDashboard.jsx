@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { getStudentProfile, updateStudentProfile } from "../../services/api";
+import {
+  getStudentProfile,
+  updateStudentMarks,
+  updateStudentProfile,
+} from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext.jsx";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { toast } from "react-toastify";
 import { FaUser, FaBook, FaChartLine } from "react-icons/fa";
+import ProfilePictureUpload from "../common/ProfilePictureUpload";
 
 const StudentDashboard = () => {
   const { user, updateUser } = useAuth();
@@ -36,6 +41,16 @@ const StudentDashboard = () => {
     age: Yup.number()
       .min(18, "Age must be at least 18")
       .required("Age is required"),
+    subjects: Yup.array().of(
+      Yup.object().shape({
+        _id: Yup.string().required("Subject ID is required"), // Ensure the ID exists
+        mark: Yup.number()
+          .typeError("Mark must be a number") // Prevents non-numeric values
+          .min(0, "Marks must be at least 0")
+          .max(100, "Marks cannot exceed 100")
+          .required("Mark is required"),
+      })
+    ),
   });
 
   const handleProfileUpdate = async (values) => {
@@ -46,6 +61,30 @@ const StudentDashboard = () => {
       toast.success("Profile updated successfully");
     } catch (error) {
       toast.error(error.message || "Failed to update profile");
+    }
+  };
+
+  const handleProfilePictureUpdate = (profilePictureUrl) => {
+    setProfileData({
+      ...profileData,
+      profilePicture: profilePictureUrl,
+    });
+  };
+
+  const handleMarksUpdate = async (values, { setSubmitting }) => {
+    try {
+      await updateStudentMarks({ subjects: values.subjects });
+      toast.success("Marks updated successfully!");
+
+      // Update state to reflect changes
+      setProfileData((prevData) => ({
+        ...prevData,
+        subjects: values.subjects,
+      }));
+    } catch (error) {
+      toast.error(error.message || "Failed to update marks.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -68,10 +107,15 @@ const StudentDashboard = () => {
         {/* Sidebar */}
         <div className="w-full md:w-1/4">
           <div className="card p-4">
+            <ProfilePictureUpload
+              currentImage={
+                profileData?.profilePicture
+                  ? `http://localhost:3000${profileData.profilePicture}`
+                  : null
+              }
+              onUpdateSuccess={handleProfilePictureUpdate}
+            />
             <div className="flex flex-col items-center mb-6">
-              <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                <FaUser className="text-blue-600 text-4xl" />
-              </div>
               <h2 className="text-xl font-semibold">
                 {user?.firstName} {user?.lastName}
               </h2>
@@ -104,18 +148,6 @@ const StudentDashboard = () => {
                   }`}
                 >
                   <FaBook className="mr-2" /> Academics
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setActiveTab("progress")}
-                  className={`w-full text-left px-4 py-2 rounded flex items-center ${
-                    activeTab === "progress"
-                      ? "bg-blue-100 text-blue-700"
-                      : "hover:bg-gray-100"
-                  }`}
-                >
-                  <FaChartLine className="mr-2" /> Progress
                 </button>
               </li>
             </ul>
@@ -233,106 +265,68 @@ const StudentDashboard = () => {
               <div>
                 <h2 className="text-xl font-semibold mb-4">Academic Records</h2>
 
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="py-2 px-4 border-b text-left">
-                          Subject
-                        </th>
-                        <th className="py-2 px-4 border-b text-center">
-                          Marks
-                        </th>
-                        <th className="py-2 px-4 border-b text-center">
-                          Grade
-                        </th>
-                        <th className="py-2 px-4 border-b text-center">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {profileData?.academics?.length > 0 ? (
-                        profileData.academics.map((subject, index) => (
-                          <tr key={index}>
-                            <td className="py-2 px-4 border-b">
-                              {subject.name}
-                            </td>
-                            <td className="py-2 px-4 border-b text-center">
-                              {subject.marks}
-                            </td>
-                            <td className="py-2 px-4 border-b text-center">
-                              {subject.grade}
-                            </td>
-                            <td className="py-2 px-4 border-b text-center">
-                              <span
-                                className={`px-2 py-1 rounded text-xs ${
-                                  subject.status === "Passed"
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {subject.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan="4"
-                            className="py-4 text-center text-gray-500"
-                          >
-                            No academic records available
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "progress" && (
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Progress Reports</h2>
-
-                {profileData?.progress?.length > 0 ? (
-                  <div className="space-y-4">
-                    {profileData.progress.map((report, index) => (
-                      <div key={index} className="border rounded-md p-4">
-                        <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-medium">{report.term}</h3>
-                          <span className="text-sm text-gray-500">
-                            {report.date}
-                          </span>
+                {profileData?.subjects?.length > 0 ? (
+                  <Formik
+                    initialValues={{ subjects: profileData.subjects }}
+                    // validationSchema={validationSchema}
+                    onSubmit={handleMarksUpdate}
+                  >
+                    {({ isSubmitting }) => (
+                      <Form>
+                        <div className="overflow-x-auto">
+                          <table className="min-w-full bg-white">
+                            <thead>
+                              <tr className="bg-gray-100">
+                                <th className="py-2 px-4 border-b text-left">
+                                  Subject
+                                </th>
+                                <th className="py-2 px-4 border-b text-center">
+                                  Marks
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <Field name="subjects">
+                                {({ field, form }) =>
+                                  field.value.map((subject, index) => (
+                                    <tr key={subject._id}>
+                                      <td className="py-2 px-4 border-b">
+                                        {subject.name}
+                                      </td>
+                                      <td className="py-2 px-4 border-b text-center">
+                                        <Field
+                                          type="number"
+                                          name={`subjects[${index}].mark`}
+                                          className="border p-1 w-20 text-center"
+                                        />
+                                        <ErrorMessage
+                                          name={`subjects[${index}].mark`}
+                                          component="div"
+                                          className="text-red-500 text-xs"
+                                        />
+                                      </td>
+                                    </tr>
+                                  ))
+                                }
+                              </Field>
+                            </tbody>
+                          </table>
                         </div>
-                        <p className="text-gray-700 mb-2">{report.comment}</p>
-                        <div className="mt-3">
-                          <span className="text-sm font-medium">
-                            Overall Grade:{" "}
-                          </span>
-                          <span
-                            className={`px-2 py-1 rounded text-xs ${
-                              report.grade === "A"
-                                ? "bg-green-100 text-green-800"
-                                : report.grade === "B"
-                                ? "bg-blue-100 text-blue-800"
-                                : report.grade === "C"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
+
+                        <div className="mt-4">
+                          <button
+                            type="submit"
+                            className="btn-primary"
+                            disabled={isSubmitting}
                           >
-                            {report.grade}
-                          </span>
+                            {isSubmitting ? "Saving..." : "Save Changes"}
+                          </button>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      </Form>
+                    )}
+                  </Formik>
                 ) : (
-                  <div className="py-4 text-center text-gray-500">
-                    No progress reports available
-                  </div>
+                  <p className="text-gray-500">No academic records available</p>
                 )}
               </div>
             )}

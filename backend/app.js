@@ -5,6 +5,7 @@ import authRoutes from "./routes/authRoutes.js";
 import studentRoutes from "./routes/student-route.js";
 import teacherRoutes from "./routes/teacher-route.js";
 import cors from "cors";
+import path from "path";
 
 // Load environment variables
 dotenv.config();
